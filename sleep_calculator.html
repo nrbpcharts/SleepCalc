@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep Calculator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e1a;color:#e8eaf0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem 4rem;}
+h1{font-size:1.6rem;font-weight:600;letter-spacing:-0.02em;color:#c5cae9;margin-bottom:0.2rem;text-align:center;}
+.subtitle{font-size:0.85rem;color:#6b7399;margin-bottom:2rem;text-align:center;}
+.card{background:#12172b;border:1px solid #1e2540;border-radius:16px;padding:1.5rem;width:100%;max-width:480px;margin-bottom:1rem;}
+.card-title{font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4a5278;margin-bottom:1rem;}
+.screen{display:none;width:100%;max-width:480px;flex-direction:column;align-items:center;}
+.screen.active{display:flex;}
+
+/* Buttons */
+.btn{width:100%;background:#3d4f9f;border:none;border-radius:10px;color:#e8eaf0;font-size:1rem;font-weight:500;padding:0.85rem;cursor:pointer;margin-top:0.75rem;transition:background 0.15s;}
+.btn:hover{background:#4a5dba;}
+.btn.secondary{background:#1a2040;border:1px solid #2a3260;color:#7986cb;margin-top:0.5rem;}
+.btn.secondary:hover{background:#1e2650;}
+.btn.ghost{background:transparent;border:1px solid #1e2540;color:#6b7399;margin-top:0.5rem;}
+.btn.ghost:hover{background:#12172b;}
+.btn.sm{font-size:0.85rem;padding:0.6rem;margin-top:0.5rem;}
+
+/* Mode toggle */
+.mode-toggle{display:flex;gap:0.5rem;margin-bottom:1rem;}
+.mode-btn{flex:1;background:#0d1221;border:1px solid #1e2540;border-radius:8px;color:#6b7399;font-size:0.82rem;padding:0.6rem 0.4rem;cursor:pointer;transition:all 0.15s;line-height:1.3;}
+.mode-btn.active{background:#1a2456;border-color:#3d4f9f;color:#9fa8da;}
+
+/* Time input */
+.time-row{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;}
+.time-row label{font-size:0.9rem;color:#8891b8;flex-shrink:0;}
+input[type="time"]{background:#0d1221;border:1px solid #1e2540;border-radius:10px;color:#c5cae9;font-size:1.4rem;font-weight:500;padding:0.5rem 0.85rem;outline:none;flex:1;min-width:130px;}
+input[type="time"]:focus{border-color:#3d4f9f;}
+
+/* Results */
+.result-item{background:#12172b;border:1px solid #1e2540;border-radius:14px;padding:1rem 1.25rem;margin-bottom:0.6rem;display:flex;align-items:center;gap:1rem;cursor:pointer;transition:border-color 0.15s;width:100%;}
+.result-item:hover{border-color:#2a3260;}
+.result-item.best{border-color:#3d4f9f;background:#111a38;}
+.result-time{font-size:1.5rem;font-weight:600;color:#c5cae9;min-width:85px;}
+.result-info{flex:1;}
+.result-label{font-size:0.82rem;color:#8891b8;margin-bottom:0.15rem;}
+.result-cycles{font-size:0.75rem;color:#4a5278;}
+.badge{display:inline-block;background:#1a2456;color:#7986cb;font-size:0.62rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:0.5rem;vertical-align:middle;}
+.dot-row{display:flex;gap:3px;margin-top:0.35rem;}
+.dot{width:7px;height:7px;border-radius:50%;background:#1e2540;}
+.dot.filled{background:#3d4f9f;}
+.dot.dim{background:#2a3260;}
+
+/* Slider */
+.slider-wrap{margin:1rem 0;}
+.slider-wrap label{font-size:0.85rem;color:#8891b8;display:block;margin-bottom:0.5rem;}
+input[type="range"]{width:100%;accent-color:#3d4f9f;}
+.slider-val{font-size:2rem;font-weight:600;color:#c5cae9;text-align:center;margin:0.5rem 0;}
+.slider-desc{font-size:0.8rem;color:#6b7399;text-align:center;}
+
+/* Timeline */
+.timeline-bar{display:flex;height:26px;border-radius:8px;overflow:hidden;margin-bottom:0.5rem;}
+.tl-seg{display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:rgba(255,255,255,0.5);overflow:hidden;white-space:nowrap;}
+.tl-labels{display:flex;justify-content:space-between;font-size:0.68rem;color:#4a5278;margin-bottom:0.75rem;}
+.legend{display:flex;gap:0.75rem;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:0.7rem;color:#6b7399;}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* Insights */
+.insight-box{background:#0d1221;border:1px solid #1a2040;border-radius:12px;padding:1rem 1.25rem;margin-bottom:0.75rem;width:100%;}
+.insight-box h3{font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4a5278;margin-bottom:0.75rem;}
+.insight-row{display:flex;gap:0.75rem;margin-bottom:0.5rem;align-items:flex-start;}
+.insight-icon{font-size:0.9rem;flex-shrink:0;margin-top:1px;}
+.insight-text{font-size:0.8rem;color:#6b7399;line-height:1.45;}
+.insight-text strong{color:#8891b8;font-weight:500;}
+
+/* History */
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid #1a2040;font-size:0.82rem;}
+.hist-item:last-child{border-bottom:none;}
+.hist-date{color:#6b7399;}
+.hist-detail{color:#8891b8;}
+.hist-score{color:#9fa8da;font-weight:500;}
+
+/* Nav */
+.nav{display:flex;gap:0.5rem;width:100%;max-width:480px;margin-bottom:1.5rem;}
+.nav-btn{flex:1;background:#12172b;border:1px solid #1e2540;border-radius:10px;color:#6b7399;font-size:0.78rem;padding:0.55rem 0.25rem;cursor:pointer;transition:all 0.15s;text-align:center;}
+.nav-btn.active{background:#1a2456;border-color:#3d4f9f;color:#9fa8da;}
+
+.divider{width:100%;height:1px;background:#1a2040;margin:0.75rem 0;}
+.muted{font-size:0.75rem;color:#4a5278;text-align:center;margin-top:0.5rem;}
+.big-label{font-size:1rem;color:#8891b8;margin-bottom:0.5rem;text-align:center;}
+.morning-q{font-size:1.1rem;font-weight:500;color:#c5cae9;text-align:center;margin-bottom:1.25rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<h1>🌙 Sleep Calculator</h1>
+<p class="subtitle">Science-backed sleep, personalized over time</p>
+
+<!-- NAV -->
+<div class="nav" id="mainNav">
+  <button class="nav-btn active" onclick="showTab('plan')">Plan</button>
+  <button class="nav-btn" onclick="showTab('checkin')">Check-in</button>
+  <button class="nav-btn" onclick="showTab('insights')">Insights</button>
+  <button class="nav-btn" onclick="showTab('history')">History</button>
+</div>
+
+<!-- ===== PLAN TAB ===== -->
+<div class="screen active" id="tab-plan">
+  <div class="card" style="width:100%;max-width:480px;">
+    <div class="card-title">Tonight's sleep</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mAlarm" onclick="setPlanMode('alarm')">⏰ Setting an alarm</button>
+      <button class="mode-btn" id="mNoAlarm" onclick="setPlanMode('noalarm')">😴 No alarm</button>
+    </div>
+
+    <!-- Alarm mode -->
+    <div id="alarmInputs">
+      <div class="time-row">
+        <label>Wake at</label>
+        <input type="time" id="wakeTime" value="07:00">
+      </div>
+      <button class="btn" onclick="calcAlarm()">Calculate bedtimes</button>
+    </div>
+
+    <!-- No alarm mode -->
+    <div id="noAlarmInputs" style="display:none;">
+      <div class="time-row">
+        <label>Getting into bed at</label>
+        <input type="time" id="bedTimeInput">
+      </div>
+      <p class="muted">We'll ask what time you woke up in the morning.</p>
+      <button class="btn" onclick="logBedtime()">Log bedtime</button>
+    </div>
+  </div>
+
+  <!-- Alarm results -->
+  <div id="alarmResults" style="width:100%;max-width:480px;display:none;">
+    <div class="card-title" style="padding-left:0.25rem;">Recommended bedtimes</div>
+    <div id="resultsList"></div>
+
+    <!-- Timeline -->
+    <div class="card" style="margin-top:0.25rem;">
+      <div class="card-title">Sleep cycle timeline</div>
+      <div class="timeline-bar" id="tlBar"></div>
+      <div class="tl-labels" id="tlLabels"></div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#1e3a5f"></div>Light</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#1a3a8f"></div>Deep</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#3d4f9f"></div>REM</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#4a3060"></div>Transition</div>
+      </div>
+    </div>
+    <p class="muted">Tap a bedtime to see its cycle timeline</p>
+  </div>
+</div>
+
+<!-- ===== CHECK-IN TAB ===== -->
+<div class="screen" id="tab-checkin">
+  <div id="checkinContent" style="width:100%;max-width:480px;"></div>
+</div>
+
+<!-- ===== INSIGHTS TAB ===== -->
+<div class="screen" id="tab-insights">
+  <div id="insightsContent" style="width:100%;max-width:480px;"></div>
+</div>
+
+<!-- ===== HISTORY TAB ===== -->
+<div class="screen" id="tab-history">
+  <div id="historyContent" style="width:100%;max-width:480px;"></div>
+</div>
+
+<script>
+// ── Storage helpers ──
+function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// ── State ──
+let planMode='alarm';
+let pendingEntry=load('pendingEntry')||null; // {type, bedTime, wakeTime, cycles}
+let history=load('sleepHistory')||[];
+let profile=load('sleepProfile')||{avgCycleMin:90,preferredCycles:5,checkins:0};
+
+// ── Nav ──
+function showTab(t){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  event.target.classList.add('active');
+  if(t==='checkin') renderCheckin();
+  if(t==='insights') renderInsights();
+  if(t==='history') renderHistory();
+}
+
+// ── Helpers ──
+function fmt(d){
+  let h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  return `${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
+function fmtHrs(m){const h=Math.floor(m/60),mn=m%60;return mn?`${h}h ${mn}m`:`${h}h`;}
+function quality(c){
+  if(c>=6)return'Excellent — fully restored';
+  if(c===5)return'Optimal — well rested';
+  if(c===4)return'Good — solid rest';
+  if(c===3)return'Minimal — functional';
+  return'Very short';
+}
+function sliderLabel(v){
+  if(v<=2)return'Rough — barely rested';
+  if(v<=4)return'Tired — could use more';
+  if(v<=6)return'OK — got by';
+  if(v<=8)return'Good — feeling solid';
+  return'Great — fully refreshed';
+}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+
+// ── Plan mode toggle ──
+function setPlanMode(m){
+  planMode=m;
+  document.getElementById('mAlarm').classList.toggle('active',m==='alarm');
+  document.getElementById('mNoAlarm').classList.toggle('active',m==='noalarm');
+  document.getElementById('alarmInputs').style.display=m==='alarm'?'':'none';
+  document.getElementById('noAlarmInputs').style.display=m==='noalarm'?'':'none';
+  document.getElementById('alarmResults').style.display='none';
+  // default bed time to now
+  if(m==='noalarm'){
+    const now=new Date();
+    document.getElementById('bedTimeInput').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+}
+
+// ── Alarm calc ──
+function calcAlarm(){
+  const raw=document.getElementById('wakeTime').value;
+  if(!raw)return;
+  const [h,m]=raw.split(':').map(Number);
+  const wake=new Date();wake.setHours(h,m,0,0);
+  if(wake<new Date())wake.setDate(wake.getDate()+1);
+
+  const ONSET=14;
+  const CYCLE=profile.avgCycleMin||90;
+  let items=[];
+  for(let c=6;c>=3;c--){
+    const bed=new Date(wake.getTime()-(c*CYCLE+ONSET)*60000);
+    items.push({bed,wake,cycles:c});
+  }
+
+  // sort by preferred cycles first
+  const pref=profile.preferredCycles||5;
+  items.sort((a,b)=>Math.abs(a.cycles-pref)-Math.abs(b.cycles-pref));
+  const bestCycles=items[0].cycles;
+  items.sort((a,b)=>b.cycles-a.cycles);
+
+  const list=document.getElementById('resultsList');
+  list.innerHTML='';
+  items.forEach(item=>{
+    const isBest=item.cycles===bestCycles;
+    const div=document.createElement('div');
+    div.className='result-item'+(isBest?' best':'');
+    const dots=Array.from({length:6},(_,j)=>`<div class="dot ${j<item.cycles?'filled':'dim'}"></div>`).join('');
+    div.innerHTML=`
+      <div class="result-time">${fmt(item.bed)}</div>
+      <div class="result-info">
+        <div class="result-label">${quality(item.cycles)}${isBest?'<span class="badge">Best for you</span>':''}</div>
+        <div class="result-cycles">${item.cycles} cycles · ${fmtHrs(item.cycles*CYCLE)}</div>
+        <div class="dot-row">${dots}</div>
+      </div>`;
+    div.addEventListener('click',()=>renderTimeline(item.bed,item.wake,item.cycles));
+    list.appendChild(div);
+  });
+
+  document.getElementById('alarmResults').style.display='block';
+  renderTimeline(items[0].bed,items[0].wake,items[0].cycles);
+
+  // save pending for morning checkin
+  pendingEntry={type:'alarm',bedTime:null,wakeTime:fmt(items.find(i=>i.cycles===bestCycles).wake),targetCycles:bestCycles,date:todayStr()};
+  save('pendingEntry',pendingEntry);
+}
+
+// ── No alarm: log bedtime ──
+function logBedtime(){
+  const raw=document.getElementById('bedTimeInput').value;
+  if(!raw)return;
+  const [h,m]=raw.split(':').map(Number);
+  const bed=new Date();bed.setHours(h,m,0,0);
+  pendingEntry={type:'noalarm',bedTime:fmt(bed),bedTimeRaw:raw,wakeTime:null,date:todayStr()};
+  save('pendingEntry',pendingEntry);
+  alert('Bedtime logged! Come back in the morning for your check-in.');
+}
+
+// ── Timeline ──
+function renderTimeline(bed,wake,cycles){
+  const bar=document.getElementById('tlBar');
+  const lbl=document.getElementById('tlLabels');
+  bar.innerHTML='';lbl.innerHTML='';
+  const phases=[
+    {label:'Light',color:'#1e3a5f',pct:22},
+    {label:'Deep',color:'#1a3a8f',pct:33},
+    {label:'REM',color:'#3d4f9f',pct:28},
+    {label:'Trans',color:'#4a3060',pct:17},
+  ];
+  const segs=[];
+  for(let c=0;c<cycles;c++) phases.forEach(p=>segs.push(p));
+  const tot=phases.reduce((a,b)=>a+b.pct,0)*cycles;
+  segs.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='tl-seg';
+    const w=(s.pct/tot*100).toFixed(2);
+    d.style.cssText=`width:${w}%;background:${s.color};`;
+    if(parseFloat(w)>7)d.textContent=s.label;
+    bar.appendChild(d);
+  });
+  const start=new Date(bed.getTime()+14*60000);
+  const s=document.createElement('span');s.textContent=fmt(bed)+' bed';
+  const e=document.createElement('span');e.textContent=fmt(wake)+' wake';
+  lbl.appendChild(s);lbl.appendChild(e);
+}
+
+// ── Check-in ──
+function renderCheckin(){
+  const el=document.getElementById('checkinContent');
+  el.innerHTML='';
+
+  if(!pendingEntry){
+    el.innerHTML=`<div class="card"><p class="muted" style="text-align:center;padding:1rem 0;">No pending check-in.<br>Plan tonight's sleep on the Plan tab first.</p></div>`;
+    return;
+  }
+
+  if(pendingEntry.type==='alarm'){
+    // Morning after alarm night
+    el.innerHTML=`
+      <div class="card">
+        <div class="card-title">Morning check-in</div>
+        <p class="morning-q">How do you feel waking up today?</p>
+        <div class="slider-wrap">
+          <div class="slider-val" id="ciVal">5</div>
+          <input type="range" min="1" max="10" value="5" id="ciSlider" oninput="updateSlider()">
+          <div class="slider-desc" id="ciDesc">${sliderLabel(5)}</div>
+        </div>
+        <div class="divider"></div>
+        <p class="muted" style="margin-bottom:0.5rem;">What time did you actually wake up?</p>
+        <div class="time-row" style="justify-content:center;">
+          <input type="time" id="actualWake" value="${new Date().getHours().toString().padStart(2,'0')}:${new Date().getMinutes().toString().padStart(2,'0')}">
+        </div>
+        <button class="btn" onclick="submitAlarmCheckin()">Save check-in</button>
+      </div>`;
+  } else {
+    // Morning after no-alarm night
+    el.innerHTML=`
+      <div class="card">
+        <div class="card-title">Morning check-in</div>
+        <p class="morning-q">What time did you naturally wake up?</p>
+        <div class="time-row" style="justify-content:center;margin-bottom:1rem;">
+          <input type="time" id="naturalWake" value="${new Date().getHours().toString().padStart(2,'0')}:${new Date().getMinutes().toString().padStart(2,'0')}">
+        </div>
+        <p class="morning-q" style="font-size:0.95rem;">How rested do you feel?</p>
+        <div class="slider-wrap">
+          <div class="slider-val" id="ciVal">5</div>
+          <input type="range" min="1" max="10" value="5" id="ciSlider" oninput="updateSlider()">
+          <div class="slider-desc" id="ciDesc">${sliderLabel(5)}</div>
+        </div>
+        <button class="btn" onclick="submitNoAlarmCheckin()">Save check-in</button>
+      </div>`;
+  }
+}
+
+function updateSlider(){
+  const v=parseInt(document.getElementById('ciSlider').value);
+  document.getElementById('ciVal').textContent=v;
+  document.getElementById('ciDesc').textContent=sliderLabel(v);
+}
+
+function submitAlarmCheckin(){
+  const score=parseInt(document.getElementById('ciSlider').value);
+  const rawWake=document.getElementById('actualWake').value;
+  const entry={
+    date:pendingEntry.date||todayStr(),
+    type:'alarm',
+    targetCycles:pendingEntry.targetCycles,
+    score,
+    actualWake:rawWake,
+  };
+  saveEntry(entry);
+  updateProfile(entry);
+  pendingEntry=null;save('pendingEntry',null);
+  alert('Saved! Check your Insights tab to see your sleep profile.');
+}
+
+function submitNoAlarmCheckin(){
+  const score=parseInt(document.getElementById('ciSlider').value);
+  const rawWake=document.getElementById('naturalWake').value;
+  if(!rawWake||!pendingEntry.bedTimeRaw){alert('Please enter your wake time.');return;}
+
+  // calc natural cycles
+  const [bh,bm]=pendingEntry.bedTimeRaw.split(':').map(Number);
+  const [wh,wm]=rawWake.split(':').map(Number);
+  let bedMin=bh*60+bm+14; // +onset
+  let wakeMin=wh*60+wm;
+  if(wakeMin<bedMin)wakeMin+=24*60;
+  const sleptMin=wakeMin-bedMin;
+  const naturalCycles=Math.round(sleptMin/90*10)/10;
+  const naturalCycleLen=Math.round(sleptMin/(Math.round(naturalCycles)||1));
+
+  const entry={
+    date:pendingEntry.date||todayStr(),
+    type:'noalarm',
+    bedTime:pendingEntry.bedTime,
+    actualWake:rawWake,
+    sleptMin,
+    naturalCycles:Math.round(naturalCycles*10)/10,
+    naturalCycleLen,
+    score,
+  };
+  saveEntry(entry);
+  updateProfile(entry);
+  pendingEntry=null;save('pendingEntry',null);
+  alert('Saved! Check your Insights tab to see your sleep profile.');
+}
+
+function saveEntry(e){
+  history.unshift(e);
+  if(history.length>60)history=history.slice(0,60);
+  save('sleepHistory',history);
+}
+
+function updateProfile(entry){
+  profile.checkins=(profile.checkins||0)+1;
+
+  // adjust preferred cycles based on score
+  if(entry.type==='alarm'&&entry.targetCycles){
+    if(entry.score>=7){
+      // this cycle count felt good — nudge toward it
+      profile.preferredCycles=Math.round((profile.preferredCycles*2+entry.targetCycles)/3*10)/10;
+    } else if(entry.score<=4){
+      // felt bad — nudge away (more cycles)
+      profile.preferredCycles=Math.min(6,profile.preferredCycles+0.2);
+    }
+    profile.preferredCycles=Math.max(3,Math.min(6,Math.round(profile.preferredCycles*10)/10));
+  }
+
+  // adjust cycle length from natural sleep data
+  if(entry.type==='noalarm'&&entry.naturalCycleLen&&entry.naturalCycles>=3){
+    const cl=entry.naturalCycleLen;
+    if(cl>=70&&cl<=120){
+      profile.avgCycleMin=Math.round((profile.avgCycleMin*3+cl)/4);
+    }
+  }
+
+  save('sleepProfile',profile);
+}
+
+// ── Insights ──
+function renderInsights(){
+  const el=document.getElementById('insightsContent');
+  el.innerHTML='';
+
+  if(history.length===0){
+    el.innerHTML=`<div class="card"><p class="muted" style="padding:1rem 0;text-align:center;">No data yet — complete a few nights to see your personal insights.</p></div>`;
+    return;
+  }
+
+  const avgScore=history.length?Math.round(history.reduce((a,b)=>a+(b.score||0),0)/history.length*10)/10:null;
+  const cycleMin=profile.avgCycleMin||90;
+  const prefCycles=Math.round(profile.preferredCycles*10)/10;
+  const checkins=profile.checkins||0;
+
+  // tips
+  const tips=[];
+  if(avgScore&&avgScore<6) tips.push({icon:'🛏️',text:`Your average feel score is <strong>${avgScore}/10</strong>. Try going to bed earlier to fit an extra cycle.`});
+  if(cycleMin!==90) tips.push({icon:'⏱️',text:`Your natural sleep cycle appears to be <strong>~${cycleMin} minutes</strong> — slightly ${cycleMin>90?'longer':'shorter'} than average. Bedtimes are adjusted for this.`});
+  if(prefCycles) tips.push({icon:'✨',text:`You tend to feel best after <strong>${prefCycles} cycles</strong> (~${fmtHrs(Math.round(prefCycles)*cycleMin)} of sleep).`});
+
+  const scored=history.filter(h=>h.score);
+  const consistent=history.length>=5;
+  if(!consistent) tips.push({icon:'📅',text:`Log at least <strong>5 nights</strong> for richer personalization. You have ${history.length} so far.`});
+
+  let html=`<div class="insight-box"><h3>Your sleep profile</h3>`;
+  html+=`<div class="insight-row"><span class="insight-icon">🌙</span><span class="insight-text">Nights logged: <strong>${history.length}</strong> &nbsp;·&nbsp; Check-ins: <strong>${checkins}</strong></span></div>`;
+  if(avgScore) html+=`<div class="insight-row"><span class="insight-icon">😴</span><span class="insight-text">Average feel score: <strong>${avgScore}/10</strong></span></div>`;
+  html+=`<div class="insight-row"><span class="insight-icon">⏱️</span><span class="insight-text">Estimated cycle length: <strong>${cycleMin} min</strong></span></div>`;
+  html+=`<div class="insight-row"><span class="insight-icon">✨</span><span class="insight-text">Optimal cycles for you: <strong>${prefCycles}</strong> (~${fmtHrs(Math.round(prefCycles)*cycleMin)})</span></div>`;
+  html+=`</div>`;
+
+  if(tips.length){
+    html+=`<div class="insight-box"><h3>How to improve</h3>`;
+    tips.forEach(t=>html+=`<div class="insight-row"><span class="insight-icon">${t.icon}</span><span class="insight-text">${t.text}</span></div>`);
+    html+=`</div>`;
+  }
+
+  el.innerHTML=html;
+}
+
+// ── History ──
+function renderHistory(){
+  const el=document.getElementById('historyContent');
+  if(history.length===0){
+    el.innerHTML=`<div class="card"><p class="muted" style="padding:1rem 0;text-align:center;">No history yet.</p></div>`;
+    return;
+  }
+  let html=`<div class="card"><div class="card-title">Recent nights</div>`;
+  history.slice(0,20).forEach(h=>{
+    const typ=h.type==='alarm'?'⏰':'😴';
+    const detail=h.sleptMin?fmtHrs(h.sleptMin):(h.targetCycles?`${h.targetCycles} cycles`:'');
+    const score=h.score?`${h.score}/10`:'—';
+    html+=`<div class="hist-item">
+      <span class="hist-date">${typ} ${h.date}</span>
+      <span class="hist-detail">${detail}</span>
+      <span class="hist-score">${score}</span>
+    </div>`;
+  });
+  html+=`</div>`;
+  html+=`<button class="btn ghost sm" onclick="clearHistory()">Clear all history</button>`;
+  el.innerHTML=html;
+}
+
+function clearHistory(){
+  if(confirm('Clear all sleep history and reset your profile?')){
+    history=[];profile={avgCycleMin:90,preferredCycles:5,checkins:0};
+    save('sleepHistory',history);save('sleepProfile',profile);
+    renderHistory();
+  }
+}
+
+// ── Init ──
+const now=new Date();
+document.getElementById('bedTimeInput').value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+</script>
+</body>
+</html>
