@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep Calculator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e1a;color:#e8eaf0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem 4rem}
+h1{font-size:1.6rem;font-weight:600;letter-spacing:-0.02em;color:#c5cae9;margin-bottom:0.25rem;text-align:center}
+.subtitle{font-size:0.85rem;color:#6b7399;margin-bottom:2rem;text-align:center}
+.screen{width:100%;max-width:480px;display:none}
+.screen.active{display:block}
+.card{background:#12172b;border:1px solid #1e2540;border-radius:16px;padding:1.5rem;margin-bottom:1.25rem}
+.card-title{font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4a5278;margin-bottom:1rem}
+.big-btn{width:100%;background:#3d4f9f;border:none;border-radius:10px;color:#e8eaf0;font-size:1rem;font-weight:500;padding:0.85rem;cursor:pointer;margin-top:0.75rem;transition:background 0.15s}
+.big-btn:hover{background:#4a5dba}
+.big-btn.secondary{background:#1a2040;border:1px solid #2a3260;color:#7986cb}
+.big-btn.secondary:hover{background:#1e2650}
+.big-btn.success{background:#1a4a2a;border:1px solid #2a6a3a;color:#6abf7a}
+input[type=time]{background:#0d1221;border:1px solid #1e2540;border-radius:10px;color:#c5cae9;font-size:1.5rem;font-weight:500;padding:0.5rem 0.85rem;outline:none;width:100%;margin-top:0.5rem}
+input[type=time]:focus{border-color:#3d4f9f}
+.mode-toggle{display:flex;gap:0.5rem;margin-bottom:1.25rem}
+.mode-btn{flex:1;background:#0d1221;border:1px solid #1e2540;border-radius:8px;color:#6b7399;font-size:0.82rem;padding:0.6rem;cursor:pointer;transition:all 0.15s}
+.mode-btn.active{background:#1a2456;border-color:#3d4f9f;color:#9fa8da}
+.result-item{background:#12172b;border:1px solid #1e2540;border-radius:14px;padding:1rem 1.25rem;margin-bottom:0.75rem;cursor:pointer;transition:border-color 0.15s}
+.result-item.best{border-color:#3d4f9f;background:#111a38}
+.result-item:hover{border-color:#2a3a7f}
+.result-time{font-size:1.6rem;font-weight:600;color:#c5cae9;letter-spacing:-0.01em}
+.result-label{font-size:0.82rem;color:#8891b8;margin:0.2rem 0 0.1rem}
+.result-cycles{font-size:0.75rem;color:#4a5278}
+.badge{display:inline-block;background:#1a2456;color:#7986cb;font-size:0.65rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:0.5rem;vertical-align:middle}
+.cycle-dots{display:flex;gap:3px;margin-top:0.4rem}
+.dot{width:7px;height:7px;border-radius:50%;background:#1e2540}
+.dot.filled{background:#3d4f9f}
+.dot.dim{background:#2a3260}
+.slider-wrap{margin:1rem 0}
+.slider-wrap input[type=range]{width:100%;accent-color:#3d4f9f;margin:0.5rem 0}
+.slider-labels{display:flex;justify-content:space-between;font-size:0.72rem;color:#4a5278}
+.slider-val{text-align:center;font-size:2rem;font-weight:600;color:#c5cae9;margin:0.5rem 0}
+.insight-box{background:#0d1221;border:1px solid #1a2040;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.insight-box h3{font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4a5278;margin-bottom:0.75rem}
+.insight-row{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #1a2040;font-size:0.82rem}
+.insight-row:last-child{border-bottom:none}
+.insight-label{color:#6b7399}
+.insight-val{color:#9fa8da;font-weight:500}
+.tip{display:flex;gap:0.75rem;margin-bottom:0.6rem;align-items:flex-start;font-size:0.8rem;color:#6b7399;line-height:1.45}
+.tip strong{color:#8891b8;font-weight:500}
+.history-item{padding:0.75rem 0;border-bottom:1px solid #1a2040;font-size:0.82rem}
+.history-item:last-child{border-bottom:none}
+.history-date{color:#4a5278;font-size:0.72rem;margin-bottom:0.2rem}
+.history-detail{display:flex;gap:1rem;flex-wrap:wrap}
+.history-chip{background:#1a2040;border-radius:6px;padding:2px 8px;color:#8891b8;font-size:0.75rem}
+.nav{display:flex;gap:0.5rem;width:100%;max-width:480px;margin-bottom:1.5rem}
+.nav-btn{flex:1;background:#0d1221;border:1px solid #1e2540;border-radius:8px;color:#6b7399;font-size:0.78rem;padding:0.5rem;cursor:pointer;transition:all 0.15s}
+.nav-btn.active{background:#1a2456;border-color:#3d4f9f;color:#9fa8da}
+.hint{font-size:0.72rem;color:#353d5e;text-align:center;margin-top:0.5rem}
+.big-label{font-size:0.9rem;color:#8891b8;margin-bottom:0.25rem}
+.morning-q{font-size:1.1rem;font-weight:500;color:#c5cae9;margin-bottom:1.25rem;line-height:1.4}
+</style>
+</head>
+<body>
+
+<h1>&#127769; Sleep Calculator</h1>
+<p class="subtitle">Science-backed sleep, personalized over time</p>
+
+<div class="nav" id="mainNav">
+  <button class="nav-btn active" onclick="showScreen('tonight')">Tonight</button>
+  <button class="nav-btn" onclick="showScreen('morning')">Morning</button>
+  <button class="nav-btn" onclick="showScreen('insights')">Insights</button>
+  <button class="nav-btn" onclick="showScreen('history')">History</button>
+</div>
+
+<!-- TONIGHT SCREEN -->
+<div class="screen active" id="screen-tonight">
+  <div class="card">
+    <div class="card-title">Do you have an alarm set?</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btnYesAlarm" onclick="setAlarmMode(true)">Yes, alarm</button>
+      <button class="mode-btn" id="btnNoAlarm" onclick="setAlarmMode(false)">No alarm</button>
+    </div>
+
+    <div id="alarmSection">
+      <div class="big-label">What time is your alarm?</div>
+      <input type="time" id="alarmTime" value="07:00">
+      <button class="big-btn" style="margin-top:1rem" onclick="calcAlarm()">Show me when to sleep</button>
+    </div>
+
+    <div id="noAlarmSection" style="display:none">
+      <div class="big-label">What time are you getting into bed?</div>
+      <input type="time" id="bedTimeInput">
+      <button class="big-btn" style="margin-top:1rem" onclick="logBedtime()">Log bedtime</button>
+    </div>
+  </div>
+
+  <div id="alarmResults"></div>
+
+  <div class="insight-box" id="tonightPersonal" style="display:none">
+    <h3>&#9733; Personalized for you</h3>
+    <div id="tonightPersonalContent"></div>
+  </div>
+
+  <div class="insight-box">
+    <h3>The science</h3>
+    <div class="tip"><span>&#8987;</span><span><strong>90-min cycles:</strong> Waking between cycles avoids grogginess. Your body naturally completes light → deep → REM in ~90 min.</span></div>
+    <div class="tip"><span>&#128336;</span><span><strong>14-min onset:</strong> Average time to fall asleep, already factored into every bedtime shown.</span></div>
+    <div class="tip"><span>&#127774;</span><span><strong>5–6 cycles ideal:</strong> 7.5–9 hrs covers most adults. Fewer than 4 impairs memory and reaction time.</span></div>
+  </div>
+</div>
+
+<!-- MORNING SCREEN -->
+<div class="screen" id="screen-morning">
+  <div class="card" id="morningCard">
+    <div class="card-title">Morning check-in</div>
+    <div id="morningContent"></div>
+  </div>
+</div>
+
+<!-- INSIGHTS SCREEN -->
+<div class="screen" id="screen-insights">
+  <div class="insight-box" id="statsBox">
+    <h3>Your sleep stats</h3>
+    <div id="statsContent"><p style="color:#4a5278;font-size:0.82rem">No data yet — complete a few nights to see your personalized stats.</p></div>
+  </div>
+  <div class="insight-box" id="tipsBox">
+    <h3>Improvement tips</h3>
+    <div id="tipsContent"><p style="color:#4a5278;font-size:0.82rem">Tips will appear after you log a few nights.</p></div>
+  </div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div class="screen" id="screen-history">
+  <div class="card">
+    <div class="card-title">Sleep history</div>
+    <div id="historyContent"><p style="color:#4a5278;font-size:0.82rem">No history yet. Log tonight's sleep to get started.</p></div>
+  </div>
+  <button class="big-btn secondary" onclick="if(confirm('Clear all sleep history?')){localStorage.removeItem('sleepLog');renderHistory();renderInsights()}">Clear all history</button>
+</div>
+
+<script>
+const ONSET = 14, CYCLE = 90;
+let hasAlarm = true;
+
+function getLog(){ try{return JSON.parse(localStorage.getItem('sleepLog'))||[];}catch{return [];} }
+function saveLog(l){ localStorage.setItem('sleepLog',JSON.stringify(l)); }
+
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if(name==='morning') renderMorning();
+  if(name==='insights') renderInsights();
+  if(name==='history') renderHistory();
+}
+
+function setAlarmMode(yes){
+  hasAlarm = yes;
+  document.getElementById('btnYesAlarm').classList.toggle('active', yes);
+  document.getElementById('btnNoAlarm').classList.toggle('active', !yes);
+  document.getElementById('alarmSection').style.display = yes ? '' : 'none';
+  document.getElementById('noAlarmSection').style.display = yes ? 'none' : '';
+  document.getElementById('alarmResults').innerHTML = '';
+}
+
+function fmtTime(d){
+  let h=d.getHours(),m=d.getMinutes();
+  const ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  return `${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
+function fmtHrs(mins){
+  const h=Math.floor(mins/60),m=mins%60;
+  return m===0?`${h}h`:`${h}h ${m}m`;
+}
+function qualityLabel(c){
+  if(c>=6)return'Excellent — fully restored';
+  if(c===5)return'Optimal — well rested';
+  if(c===4)return'Good — solid rest';
+  return'Minimal — not ideal';
+}
+
+function personalCycleLen(){
+  const log = getLog().filter(e=>e.wakeTime&&e.bedTime&&e.type==='noalarm');
+  if(log.length < 3) return CYCLE;
+  const lens = log.slice(-10).map(e=>{
+    const bed=new Date('1970-01-01T'+e.bedTime);
+    const wake=new Date('1970-01-01T'+e.wakeTime);
+    let diff=(wake-bed)/60000 - ONSET;
+    if(diff<0) diff+=1440;
+    const cycles=Math.round(diff/CYCLE);
+    return cycles>0 ? diff/cycles : CYCLE;
+  });
+  return Math.round(lens.reduce((a,b)=>a+b,0)/lens.length);
+}
+
+function bestCycleCount(){
+  const log = getLog().filter(e=>e.feelScore&&e.cycles);
+  if(log.length < 3) return 5;
+  const byCount={};
+  log.forEach(e=>{
+    if(!byCount[e.cycles]) byCount[e.cycles]={sum:0,n:0};
+    byCount[e.cycles].sum+=e.feelScore;
+    byCount[e.cycles].n++;
+  });
+  let best=5,bestAvg=0;
+  Object.entries(byCount).forEach(([c,v])=>{
+    const avg=v.sum/v.n;
+    if(avg>bestAvg){bestAvg=avg;best=parseInt(c);}
+  });
+  return best;
+}
+
+function calcAlarm(){
+  const raw=document.getElementById('alarmTime').value;
+  if(!raw) return;
+  const [h,m]=raw.split(':').map(Number);
+  const wake=new Date(); wake.setHours(h,m,0,0);
+  const cycleLen=personalCycleLen();
+  const el=document.getElementById('alarmResults');
+  el.innerHTML='';
+
+  const preferred=bestCycleCount();
+  const options=[];
+  for(let c=6;c>=3;c--){
+    const totalMins=c*cycleLen+ONSET;
+    const bed=new Date(wake.getTime()-totalMins*60000);
+    options.push({bed,wake,cycles:c,mins:totalMins});
+  }
+
+  const heading=document.createElement('div');
+  heading.style.cssText='font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#4a5278;margin-bottom:0.75rem';
+  heading.textContent='Recommended bedtimes';
+  el.appendChild(heading);
+
+  options.forEach((o,i)=>{
+    const isPersonalBest = o.cycles===preferred;
+    const div=document.createElement('div');
+    div.className='result-item'+(isPersonalBest?' best':'');
+    const dots=Array.from({length:6},(_,j)=>`<div class="dot ${j<o.cycles?'filled':'dim'}"></div>`).join('');
+    div.innerHTML=`
+      <div class="result-time">${fmtTime(o.bed)}</div>
+      <div class="result-label">${qualityLabel(o.cycles)}${isPersonalBest?'<span class="badge">Best for you</span>':''}</div>
+      <div class="result-cycles">${o.cycles} cycles · ${fmtHrs(o.cycles*cycleLen)}</div>
+      <div class="cycle-dots">${dots}</div>`;
+    div.onclick=()=>logTonightAlarm(o);
+    el.appendChild(div);
+  });
+
+  const hint=document.createElement('p');
+  hint.className='hint';
+  hint.textContent='Tap a row to log this as tonight\'s plan';
+  el.appendChild(hint);
+
+  showPersonalNote(cycleLen, preferred);
+}
+
+function showPersonalNote(cycleLen, preferred){
+  const log=getLog();
+  if(log.length<3) return;
+  const box=document.getElementById('tonightPersonal');
+  const content=document.getElementById('tonightPersonalContent');
+  box.style.display='';
+  let html='';
+  if(cycleLen!==CYCLE) html+=`<div class="insight-row"><span class="insight-label">Your cycle length</span><span class="insight-val">~${cycleLen} min</span></div>`;
+  html+=`<div class="insight-row"><span class="insight-label">You feel best after</span><span class="insight-val">${preferred} cycles (${fmtHrs(preferred*cycleLen)})</span></div>`;
+  content.innerHTML=html;
+}
+
+function logTonightAlarm(o){
+  const today=new Date().toISOString().split('T')[0];
+  const log=getLog();
+  const existing=log.findIndex(e=>e.date===today);
+  const entry={date:today,type:'alarm',alarmTime:fmtTime(o.wake),plannedBed:fmtTime(o.bed),cycles:o.cycles};
+  if(existing>=0) log[existing]={...log[existing],...entry};
+  else log.push(entry);
+  saveLog(log);
+  alert(`Logged! Get into bed at ${fmtTime(o.bed)}.\nCheck in tomorrow morning to rate how you feel.`);
+}
+
+function logBedtime(){
+  const raw=document.getElementById('bedTimeInput').value;
+  if(!raw){alert('Please enter a bedtime.');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const log=getLog();
+  const existing=log.findIndex(e=>e.date===today);
+  const entry={date:today,type:'noalarm',bedTime:raw};
+  if(existing>=0) log[existing]={...log[existing],...entry};
+  else log.push(entry);
+  saveLog(log);
+  alert(`Bedtime logged at ${raw}!\nCome back in the morning to log your wake time and how you feel.`);
+}
+
+function renderMorning(){
+  const today=new Date().toISOString().split('T')[0];
+  const log=getLog();
+  const entry=log.find(e=>e.date===today)||{};
+  const el=document.getElementById('morningContent');
+
+  if(entry.feelScore){
+    el.innerHTML=`<p class="morning-q">You've already checked in today ✓</p><p style="color:#4a5278;font-size:0.82rem">Come back tomorrow morning!</p>`;
+    return;
+  }
+
+  let html='';
+
+  if(entry.type==='noalarm' && entry.bedTime && !entry.wakeTime){
+    html+=`<p class="morning-q">What time did you naturally wake up?</p>
+    <input type="time" id="wakeTimeInput" style="margin-bottom:1rem">`;
+  }
+
+  html+=`<p class="morning-q" style="margin-top:${entry.type==='noalarm'&&!entry.wakeTime?'1rem':'0'}">How do you feel right now?</p>
+  <div class="slider-wrap">
+    <div class="slider-val" id="feelDisp
